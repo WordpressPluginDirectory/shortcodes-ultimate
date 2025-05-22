@@ -3,10 +3,10 @@ Contributors: gn_themes
 License: GPLv3
 Donate link: https://getshortcodes.com/pricing/
 Tags: posts, carousel, shortcode, toggle, columns
-Stable tag: 7.3.4
+Stable tag: 7.4.0
 Requires PHP: 5.4
 Requires at least: 5.0
-Tested up to: 6.7
+Tested up to: 6.8
 
 
 A comprehensive collection of visual components for your site
@@ -141,13 +141,28 @@ Upgrade normally
 
 
 
+= 7.4.0
+
+This update features security improvements and is recommended for all users
+
+- Added a new `bold` option to the `su_button` shortcode, which makes the button text bold
+- Added a new `max_width` option to the `su_box` shortcode, allowing you to change the box width
+- Fixed a conflict with the Social Login plugin; [Details](https://wordpress.org/support/topic/css-conflict-with-social-login-wordpress-woocommerce-plugin/)
+- Updated Freemius SDK
+
+
+= 7.3.5
+
+- Updated Freemius SDK
+- Tested with WordPress 6.8
+
+
 = 7.3.4
 
 This update features security improvements and is recommended for all users
 
 - Fixed warning "Function _load_textdomain_just_in_time was called incorrectly"
 - Tested with PHP 8.3
-- Updated Freemius SDK
 
 
 = 7.3.3
