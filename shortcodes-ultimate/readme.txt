@@ -3,7 +3,7 @@ Contributors: gn_themes
 License: GPLv3
 Donate link: https://getshortcodes.com/pricing/
 Tags: posts, carousel, shortcode, toggle, columns
-Stable tag: 7.4.7
+Stable tag: 7.4.8
 Requires PHP: 5.4
 Requires at least: 5.0
 Tested up to: 6.9
@@ -138,6 +138,11 @@ Upgrade normally
 
 
 == Changelog ==
+
+
+= 7.4.8
+
+Security update for the Lightbox shortcode
 
 
 = 7.4.7
