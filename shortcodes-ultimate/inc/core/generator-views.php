@@ -35,10 +35,311 @@ class Su_Generator_Views {
 		foreach ( $field['values'] as $option_value => $option_title ) {
 			// Is this option selected
 			$selected = ( $field['default'] === $option_value ) ? ' selected="selected"' : '';
+			$is_pro = strpos($option_value, '_PRO-') === 0;
+			$disabled = $is_pro ? ' disabled="disabled"' : '';
 			// Create option
-			$return .= '<option value="' . $option_value . '"' . $selected . '>' . $option_title . '</option>';
+			$return .= '<option value="' . $option_value . '"' . $selected . $disabled . '>' . $option_title . '</option>';
 		}
 		$return .= '</select>';
+		return $return;
+
+	}
+
+	public static function image_radio( $id, $field ) {
+
+		$field = wp_parse_args(
+			$field,
+			array(
+				'default' => '',
+				'values'  => array(),
+			)
+		);
+
+		$options = array();
+
+		foreach ( $field['values'] as $option_value => $option ) {
+			$option_value = (string) $option_value;
+
+			if ( is_array( $option ) ) {
+				$label = isset( $option['label'] ) ? $option['label'] : $option_value;
+				$image = isset( $option['image'] ) ? $option['image'] : '';
+				$alt   = isset( $option['alt'] ) ? $option['alt'] : $label;
+			} else {
+				$label = (string) $option;
+				$image = '';
+				$alt   = $label;
+			}
+
+			$options[ $option_value ] = array(
+				'label' => $label,
+				'image' => $image,
+				'alt'   => $alt,
+			);
+		}
+
+		if ( empty( $options ) ) {
+			return '';
+		}
+
+		$default = (string) $field['default'];
+
+		if ( ! isset( $options[ $default ] ) ) {
+			$default = (string) key( $options );
+		}
+
+		$return  = '<div class="su-generator-image-radio">';
+		$return .= '<input type="hidden" name="' . esc_attr( $id ) . '" value="' . esc_attr( $default ) . '" id="su-generator-attr-' . esc_attr( $id ) . '" class="su-generator-attr su-generator-image-radio-value" />';
+
+		foreach ( $options as $option_value => $option ) {
+			$option_id = sanitize_html_class( $id . '-' . $option_value );
+
+			if ( '' === $option_id ) {
+				$option_id = md5( $id . '-' . $option_value );
+			}
+
+			$return .= '<label class="su-generator-image-radio-option" for="su-generator-image-radio-' . esc_attr( $option_id ) . '">';
+			$return .= '<input type="radio" name="' . esc_attr( $id . '_image_radio' ) . '" value="' . esc_attr( $option_value ) . '" id="su-generator-image-radio-' . esc_attr( $option_id ) . '" class="su-generator-image-radio-input"' . checked( $default, $option_value, false ) . ' />';
+			$return .= '<span class="su-generator-image-radio-card">';
+
+			if ( '' !== $option['image'] ) {
+				$return .= '<span class="su-generator-image-radio-image"><img src="' . esc_url( $option['image'] ) . '" alt="' . esc_attr( wp_strip_all_tags( $option['alt'] ) ) . '" /></span>';
+			}
+
+			$return .= '<span class="su-generator-image-radio-label">' . esc_html( $option['label'] ) . '</span>';
+			$return .= '</span>';
+			$return .= '</label>';
+		}
+
+		$return .= '</div>';
+
+		return $return;
+
+	}
+
+	public static function searchable_select( $id, $field ) {
+
+		$field = wp_parse_args(
+			$field,
+			array(
+				'default'        => '',
+				'values'         => array(),
+				'multiple'       => false,
+				'placeholder'    => __( 'Search...', 'shortcodes-ultimate' ),
+				'empty'          => __( 'No results found', 'shortcodes-ultimate' ),
+				'loading'        => __( 'Loading...', 'shortcodes-ultimate' ),
+				'too_short'      => '',
+				'taxonomy_field' => '',
+				'ajax_action'    => '',
+				'ajax_min_length' => '',
+				'ajax_delay'     => '',
+			)
+		);
+
+		$default = is_array( $field['default'] )
+			? implode( ',', $field['default'] )
+			: (string) $field['default'];
+
+		$data = array(
+			'data-multiple="' . esc_attr( $field['multiple'] ? 'true' : 'false' ) . '"',
+			'data-placeholder="' . esc_attr( $field['placeholder'] ) . '"',
+			'data-empty="' . esc_attr( $field['empty'] ) . '"',
+			'data-loading="' . esc_attr( $field['loading'] ) . '"',
+		);
+
+		if ( $field['taxonomy_field'] ) {
+			$data[] = 'data-taxonomy-field="' . esc_attr( $field['taxonomy_field'] ) . '"';
+		}
+
+		if ( $field['too_short'] ) {
+			$data[] = 'data-too-short="' . esc_attr( $field['too_short'] ) . '"';
+		}
+
+		if ( $field['ajax_action'] ) {
+			$data[] = 'data-ajax-action="' . esc_attr( $field['ajax_action'] ) . '"';
+		}
+
+		if ( '' !== $field['ajax_min_length'] ) {
+			$data[] = 'data-ajax-min-length="' . esc_attr( $field['ajax_min_length'] ) . '"';
+		}
+
+		if ( '' !== $field['ajax_delay'] ) {
+			$data[] = 'data-ajax-delay="' . esc_attr( $field['ajax_delay'] ) . '"';
+		}
+
+		$return  = '<div class="su-generator-searchable-select" ' . implode( ' ', $data ) . '>';
+		$return .= '<input type="hidden" name="' . esc_attr( $id ) . '" value="' . esc_attr( $default ) . '" id="su-generator-attr-' . esc_attr( $id ) . '" class="su-generator-attr su-generator-searchable-select-value" />';
+		$return .= '<div class="su-generator-searchable-select-control">';
+		$return .= '<span class="su-generator-searchable-select-tokens"></span>';
+		$return .= '<input type="search" class="su-generator-searchable-select-input" autocomplete="off" spellcheck="false" placeholder="' . esc_attr( $field['placeholder'] ) . '" />';
+		$return .= '</div>';
+		$return .= '<div class="su-generator-searchable-select-dropdown" role="listbox">';
+
+		if ( is_array( $field['values'] ) ) {
+			foreach ( $field['values'] as $option_value => $option_title ) {
+				$return .= '<button type="button" class="su-generator-searchable-select-option" data-value="' . esc_attr( $option_value ) . '" data-label="' . esc_attr( wp_strip_all_tags( $option_title ) ) . '" role="option">' . esc_html( $option_title ) . '</button>';
+			}
+		}
+
+		$return .= '<div class="su-generator-searchable-select-empty">' . esc_html( $field['empty'] ) . '</div>';
+		$return .= '</div>';
+		$return .= '</div>';
+
+		return $return;
+
+	}
+
+	public static function searchable_post_type( $id, $field ) {
+
+		$types = get_post_types( array(), 'objects', 'or' );
+
+		$field['values'] = array(
+			'any' => __( 'Any post type', 'shortcodes-ultimate' ),
+		);
+
+		foreach( $types as $type ) {
+			$field['values'][$type->name] = $type->label;
+		}
+
+		if ( ! isset( $field['placeholder'] ) ) {
+			$field['placeholder'] = __( 'Search post types', 'shortcodes-ultimate' );
+		}
+
+		return self::searchable_select( $id, $field );
+
+	}
+
+	public static function searchable_taxonomy( $id, $field ) {
+
+		$taxonomies = get_taxonomies( array(), 'objects', 'or' );
+
+		$field['values'] = array(
+			'any' => __( 'Any taxonomy', 'shortcodes-ultimate' ),
+		);
+
+		foreach( $taxonomies as $taxonomy ) {
+			$field['values'][$taxonomy->name] = $taxonomy->label;
+		}
+
+		if ( ! isset( $field['placeholder'] ) ) {
+			$field['placeholder'] = __( 'Search taxonomies', 'shortcodes-ultimate' );
+		}
+
+		return self::searchable_select( $id, $field );
+
+	}
+
+	public static function searchable_term( $id, $field ) {
+
+		if ( empty( $field['values'] ) && ! empty( $field['taxonomy'] ) ) {
+			$field['values'] = Su_Generator::get_terms( $field['taxonomy'] );
+		}
+
+		if ( ! isset( $field['placeholder'] ) ) {
+			$field['placeholder'] = __( 'Search terms', 'shortcodes-ultimate' );
+		}
+
+		return self::searchable_select( $id, $field );
+
+	}
+
+	public static function searchable_posts( $id, $field ) {
+
+		$field = wp_parse_args(
+			$field,
+			array(
+				'multiple'        => true,
+				'ajax_action'     => 'su_generator_search_posts',
+				'ajax_min_length' => 2,
+				'ajax_delay'      => 250,
+				'placeholder'     => __( 'Search content', 'shortcodes-ultimate' ),
+				'empty'           => __( 'No content found', 'shortcodes-ultimate' ),
+				'too_short'       => __( 'Type at least 2 characters to search content', 'shortcodes-ultimate' ),
+			)
+		);
+
+		return self::searchable_select( $id, $field );
+
+	}
+
+	public static function searchable_users( $id, $field ) {
+
+		$field = wp_parse_args(
+			$field,
+			array(
+				'multiple'        => true,
+				'ajax_action'     => 'su_generator_search_users',
+				'ajax_min_length' => 2,
+				'ajax_delay'      => 250,
+				'placeholder'     => __( 'Search users', 'shortcodes-ultimate' ),
+				'empty'           => __( 'No users found', 'shortcodes-ultimate' ),
+				'too_short'       => __( 'Type at least 2 characters to search users', 'shortcodes-ultimate' ),
+			)
+		);
+
+		return self::searchable_select( $id, $field );
+
+	}
+
+	public static function sortable_checkboxes( $id, $field ) {
+
+		$field = wp_parse_args(
+			$field,
+			array(
+				'default' => '',
+				'values'  => array(),
+			)
+		);
+
+		$default = is_array( $field['default'] )
+			? implode( ', ', $field['default'] )
+			: (string) $field['default'];
+
+		$selected = array_filter(
+			array_map(
+				'trim',
+				explode( ',', $default )
+			)
+		);
+
+		$selected = array_values(
+			array_intersect(
+				$selected,
+				array_keys( $field['values'] )
+			)
+		);
+
+		$values = array();
+
+		foreach ( $selected as $value ) {
+			$values[ $value ] = $field['values'][ $value ];
+		}
+
+		foreach ( $field['values'] as $value => $label ) {
+			if ( ! isset( $values[ $value ] ) ) {
+				$values[ $value ] = $label;
+			}
+		}
+
+		$return  = '<div class="su-generator-sortable-checkboxes">';
+		$return .= '<input type="hidden" name="' . esc_attr( $id ) . '" value="' . esc_attr( $default ) . '" id="su-generator-attr-' . esc_attr( $id ) . '" class="su-generator-attr su-generator-sortable-checkboxes-value" />';
+		$return .= '<ul class="su-generator-sortable-checkboxes-list">';
+
+		foreach ( $values as $option_value => $option_label ) {
+			$option_id = sanitize_html_class( $id . '-' . $option_value );
+			$checked   = in_array( $option_value, $selected, true ) ? ' checked="checked"' : '';
+
+			$return .= '<li class="su-generator-sortable-checkboxes-item" data-value="' . esc_attr( $option_value ) . '">';
+			$return .= '<span class="su-generator-sortable-checkboxes-handle" aria-hidden="true"><i class="sui sui-bars"></i></span>';
+			$return .= '<label class="su-generator-sortable-checkboxes-label" for="su-generator-sortable-checkboxes-' . esc_attr( $option_id ) . '">';
+			$return .= '<input type="checkbox" id="su-generator-sortable-checkboxes-' . esc_attr( $option_id ) . '" class="su-generator-sortable-checkboxes-input" value="' . esc_attr( $option_value ) . '"' . $checked . ' />';
+			$return .= '<span class="su-generator-sortable-checkboxes-text">' . esc_html( $option_label ) . '</span>';
+			$return .= '</label>';
+			$return .= '</li>';
+		}
+
+		$return .= '</ul>';
+		$return .= '</div>';
+
 		return $return;
 
 	}
@@ -50,7 +351,7 @@ class Su_Generator_Views {
 
 		// Prepare empty array for values
 		$field['values'] = array(
-			'any' => _x( 'Any post type', 'shortcodes-ultimate' ),
+			'any' => __( 'Any post type', 'shortcodes-ultimate' ),
 		);
 
 		// Fill the array
@@ -68,8 +369,10 @@ class Su_Generator_Views {
 		// Get taxonomies
 		$taxonomies = get_taxonomies( array(), 'objects', 'or' );
 
-		// Prepare empty array for values
-		$field['values'] = array();
+		// Prepare array for values
+		$field['values'] = isset( $field['default'] ) && 'any' === $field['default']
+			? array( 'any' => __( 'Any taxonomy', 'shortcodes-ultimate' ) )
+			: array();
 
 		// Fill the array
 		foreach( $taxonomies as $taxonomy ) {
@@ -92,17 +395,19 @@ class Su_Generator_Views {
 	}
 
 	public static function bool( $id, $field ) {
-		$return = '<span class="su-generator-switch su-generator-switch-' . $field['default'] . '"><span class="su-generator-yes">' . __( 'Yes', 'shortcodes-ultimate' ) . '</span><span class="su-generator-no">' . __( 'No', 'shortcodes-ultimate' ) . '</span></span><input type="hidden" name="' . $id . '" value="' . esc_attr( $field['default'] ) . '" id="su-generator-attr-' . $id . '" class="su-generator-attr su-generator-switch-value" />';
+		$value   = ( 'yes' === $field['default'] ) ? 'yes' : 'no';
+		$checked = ( 'yes' === $value ) ? 'true' : 'false';
+		$return  = '<button type="button" class="su-generator-switch su-generator-switch-' . esc_attr( $value ) . '" role="switch" aria-checked="' . esc_attr( $checked ) . '"><span class="su-generator-switch-track" aria-hidden="true"><span class="su-generator-switch-thumb"></span></span><span class="su-generator-switch-text su-generator-yes">' . __( 'Yes', 'shortcodes-ultimate' ) . '</span><span class="su-generator-switch-text su-generator-no">' . __( 'No', 'shortcodes-ultimate' ) . '</span></button><input type="hidden" name="' . esc_attr( $id ) . '" value="' . esc_attr( $value ) . '" id="su-generator-attr-' . esc_attr( $id ) . '" class="su-generator-attr su-generator-switch-value" />';
 		return $return;
 	}
 
 	public static function upload( $id, $field ) {
-		$return = '<input type="text" name="' . $id . '" value="' . esc_attr( $field['default'] ) . '" id="su-generator-attr-' . $id . '" class="su-generator-attr su-generator-upload-value" /><div class="su-generator-field-actions"><a href="javascript:;" class="button su-generator-upload-button"><img src="' . admin_url( '/images/media-button.png' ) . '" alt="' . __( 'Media manager', 'shortcodes-ultimate' ) . '" />' . __( 'Media manager', 'shortcodes-ultimate' ) . '</a></div>';
+		$return = '<input type="text" name="' . $id . '" value="' . esc_attr( $field['default'] ) . '" id="su-generator-attr-' . $id . '" class="su-generator-attr su-generator-upload-value" /><div class="su-generator-field-actions"><a href="javascript:;" class="button su-generator-upload-button"><img src="' . admin_url( '/images/media-button.png' ) . '" alt="' . __( 'Open Media Library', 'shortcodes-ultimate' ) . '" />' . __( 'Open Media Library', 'shortcodes-ultimate' ) . '</a></div>';
 		return $return;
 	}
 
 	public static function icon( $id, $field ) {
-		$return = '<input type="text" name="' . $id . '" value="' . esc_attr( $field['default'] ) . '" id="su-generator-attr-' . $id . '" class="su-generator-attr su-generator-icon-picker-value" /><div class="su-generator-field-actions"><a href="javascript:;" class="button su-generator-upload-button su-generator-field-action"><img src="' . admin_url( '/images/media-button.png' ) . '" alt="' . __( 'Media manager', 'shortcodes-ultimate' ) . '" />' . __( 'Media manager', 'shortcodes-ultimate' ) . '</a> <a href="javascript:;" class="button su-generator-icon-picker-button su-generator-field-action"><img src="' . admin_url( '/images/media-button-other.gif' ) . '" alt="' . __( 'Icon picker', 'shortcodes-ultimate' ) . '" />' . __( 'Icon picker', 'shortcodes-ultimate' ) . '</a></div><div class="su-generator-icon-picker su-generator-clearfix"><input type="text" class="widefat" placeholder="' . __( 'Filter icons', 'shortcodes-ultimate' ) . '" /></div>';
+		$return = '<input type="text" name="' . $id . '" value="' . esc_attr( $field['default'] ) . '" id="su-generator-attr-' . $id . '" class="su-generator-attr su-generator-icon-picker-value" /><div class="su-generator-field-actions"><a href="javascript:;" class="button su-generator-upload-button su-generator-field-action"><img src="' . admin_url( '/images/media-button.png' ) . '" alt="' . __( 'Open Media Library', 'shortcodes-ultimate' ) . '" />' . __( 'Open Media Library', 'shortcodes-ultimate' ) . '</a> <a href="javascript:;" class="button su-generator-icon-picker-button su-generator-field-action"><img src="' . admin_url( '/images/media-button-other.gif' ) . '" alt="' . __( 'Icon picker', 'shortcodes-ultimate' ) . '" />' . __( 'Icon picker', 'shortcodes-ultimate' ) . '</a></div><div class="su-generator-icon-picker su-generator-clearfix"><input type="text" class="widefat" placeholder="' . __( 'Filter icons', 'shortcodes-ultimate' ) . '" /></div>';
 		return $return;
 	}
 
